@@ -1,10 +1,4 @@
-# Headless notebook runner. Uses a small set of Pluto.jl internals that are also
-# used by PlutoSliderServer and by Pluto's own `generate_html` — they are
-# de-facto stable, but not part of Pluto's declared public API, so the
-# `Pluto = "0.20"` compat bound in Project.toml matters.
-#
-# Internals touched: Pluto.ServerSession, Pluto.Configuration.from_flat_kwargs,
-# Pluto.SessionActions.open/shutdown, Pluto.notebook_to_js, Pluto.pack.
+# Headless notebook runner. Uses a small set of Pluto.jl internals, for API spec see https://plutojl.org/en/docs/api/
 
 """
     run_notebook(path; out_state::AbstractString) -> Nothing
@@ -18,7 +12,6 @@ function run_notebook(path::AbstractString; out_state::AbstractString)
     opts = Pluto.Configuration.from_flat_kwargs(;
         disable_writing_notebook_files = true,
         auto_reload_from_file          = false,
-        show_banner                    = false,
         launch_browser                 = false,
     )
     session = Pluto.ServerSession(; options = opts)
@@ -28,9 +21,7 @@ function run_notebook(path::AbstractString; out_state::AbstractString)
         # PlutoSliderServer strips `status_tree` — it's a transient UI hint the
         # frontend doesn't need to replay a completed run.
         delete!(state, "status_tree")
-        open(out_state, "w") do io
-            Pluto.pack(io, state)
-        end
+        write(out_state, Pluto.pack(io, state))
     finally
         Pluto.SessionActions.shutdown(session, notebook)
     end
