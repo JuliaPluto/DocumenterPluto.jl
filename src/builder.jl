@@ -5,8 +5,8 @@
 #   2. For blocks with a local `notebook`: run the notebook headlessly, copy the
 #      .jl and generated .plutostate into the build output, and fill in
 #      `resolved_notebook` / `resolved_state` on the block.
-#   3. For blocks with a `url`: pass `url`/`state` straight through to the
-#      resolved fields.
+#   3. For blocks without `notebook`: nothing to resolve — the pre-hosted URLs
+#      are already sitting in `pluto_params` and will be emitted verbatim.
 #   4. If any PlutoBlock was seen, push one `RawHTMLHeadContent` onto the
 #      site's `format.assets` so every page loads Pluto's frontend.
 
@@ -62,11 +62,7 @@ function _materialise_notebooks!(doc, blocks)
     asset_dir   = joinpath(build_root, _PLUTO_ASSET_SUBDIR)
 
     for (page, block) in blocks
-        if block.url !== nothing
-            block.resolved_notebook = block.url
-            block.resolved_state    = block.state
-            continue
-        end
+        block.notebook === nothing && continue  # pre-hosted: pluto_params carries the URLs
 
         nb_rel = block.notebook::String
         nb_src = isabspath(nb_rel) ? nb_rel : normpath(joinpath(source_root, nb_rel))

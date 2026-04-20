@@ -6,25 +6,35 @@ const DP = DocumenterPluto
 
 @testset "block parsing" begin
     b = DP._parse_pluto_block("""
-    url   = "https://example.com/n.jl"
-    state = "https://example.com/n.plutostate"
+    pluto_notebookfile = "https://example.com/n.jl"
+    pluto_statefile    = "https://example.com/n.plutostate"
     """)
     @test b isa DP.PlutoBlock
-    @test b.url == "https://example.com/n.jl"
-    @test b.state == "https://example.com/n.plutostate"
     @test b.notebook === nothing
-    @test b.disable_ui == true
+    @test b.pluto_params["pluto_notebookfile"] == "https://example.com/n.jl"
+    @test b.pluto_params["pluto_statefile"]    == "https://example.com/n.plutostate"
+    @test b.pluto_params["pluto_disable_ui"]   == true  # default
 
     b2 = DP._parse_pluto_block("""
-    notebook   = "notebooks/intro.jl"
-    disable_ui = false
+    notebook         = "notebooks/intro.jl"
+    pluto_disable_ui = false
+    pluto_binder_url = "https://mybinder.org/…"
     """)
     @test b2.notebook == "notebooks/intro.jl"
-    @test b2.disable_ui == false
+    @test b2.pluto_params["pluto_disable_ui"] == false
+    @test b2.pluto_params["pluto_binder_url"] == "https://mybinder.org/…"
 
+    # empty block rejected
     @test_throws Exception DP._parse_pluto_block("")
-    @test_throws Exception DP._parse_pluto_block("""notebook = "a"
-                                                    url      = "b" """)
+    # can't mix local notebook with explicit pluto_notebookfile
+    @test_throws Exception DP._parse_pluto_block("""
+        notebook           = "a.jl"
+        pluto_notebookfile = "https://example.com/n.jl"
+        pluto_statefile    = "https://example.com/n.plutostate"
+        """)
+    # pluto_statefile required alongside pluto_notebookfile
+    @test_throws Exception DP._parse_pluto_block("""pluto_notebookfile = "https://example.com/n.jl" """)
+    # unknown (non-pluto_) key rejected
     @test_throws Exception DP._parse_pluto_block("""url = "https://example.com/n.jl" """)
 end
 
@@ -43,8 +53,8 @@ end
         # Test
 
         ```@pluto
-        url   = "https://example.com/n.jl"
-        state = "https://example.com/n.plutostate"
+        pluto_notebookfile = "https://example.com/n.jl"
+        pluto_statefile    = "https://example.com/n.plutostate"
         ```
         """)
 
@@ -63,5 +73,6 @@ end
         @test occursin("pluto-editor", html)
         @test occursin("https://example.com/n.jl", html)
         @test occursin("https://example.com/n.plutostate", html)
+        @test occursin("window.pluto_disable_ui = true;", html)
     end
 end

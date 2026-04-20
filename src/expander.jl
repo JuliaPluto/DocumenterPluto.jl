@@ -7,39 +7,36 @@
     PlutoBlock
 
 MarkdownAST element produced by the `@pluto` expander. Holds the parsed
-attributes of one ```` ```@pluto ```` code block:
+attributes of one ```` ```@pluto ```` code block.
+
+The only recognised special key is:
 
 - `notebook :: Union{String, Nothing}` — path to a local `.jl` file, relative to
   the Documenter source root. When set, the plugin runs the notebook headlessly
   and copies both the `.jl` and the generated `.plutostate` into the build
-  output.
-- `url :: Union{String, Nothing}` — URL of a hosted notebook file
-  (`pluto_notebookfile`).
-- `state :: Union{String, Nothing}` — URL of a hosted `.plutostate` file.
-- `binder :: Union{String, Nothing}` — optional Binder launch URL.
-- `disable_ui :: Bool` — whether to hide Pluto's UI chrome (default `true`).
+  output, then exposes them to the frontend as `window.pluto_notebookfile` and
+  `window.pluto_statefile`.
 
-Exactly one of `notebook` or `url` must be set. When `url` is set, `state` is
-required too.
+Every other key must start with `pluto_` and is forwarded verbatim to the
+frontend as `window.<key> = <value>;` in the launch-parameters script. Typical
+keys for pre-hosted notebooks are `pluto_notebookfile` and `pluto_statefile`;
+see Pluto's frontend for the full list (`pluto_disable_ui`, `pluto_binder_url`,
+`pluto_recording_url`, …).
 
-The resolved URLs used by the frontend (`window.pluto_notebookfile`,
-`window.pluto_statefile`) are filled in by the builder step before domify runs.
+Exactly one of the following must hold: `notebook` is set, *or* both
+`pluto_notebookfile` and `pluto_statefile` are set.
 """
 mutable struct PlutoBlock <: Documenter.AbstractDocumenterBlock
-    notebook   :: Union{String, Nothing}
-    url        :: Union{String, Nothing}
-    state      :: Union{String, Nothing}
-    binder     :: Union{String, Nothing}
-    disable_ui :: Bool
-    # Filled in by the builder: final URLs the rendered <script> will point at.
-    # For a local `notebook`, these become build-relative paths.
+    notebook     :: Union{String, Nothing}
+    pluto_params :: Dict{String, Any}
+    # Filled in by the builder for local notebooks: build-root-relative paths
+    # that domify turns into page-relative hrefs.
     resolved_notebook :: Union{String, Nothing}
     resolved_state    :: Union{String, Nothing}
 end
 
-function PlutoBlock(; notebook=nothing, url=nothing, state=nothing, binder=nothing, disable_ui=true)
-    PlutoBlock(notebook, url, state, binder, disable_ui, nothing, nothing)
-end
+PlutoBlock(; notebook=nothing, pluto_params=Dict{String,Any}()) =
+    PlutoBlock(notebook, pluto_params, nothing, nothing)
 
 abstract type PlutoExpander <: Documenter.Expanders.ExpanderPipeline end
 Selectors.order(::Type{PlutoExpander}) = 7.9
@@ -57,36 +54,36 @@ function Selectors.runner(::Type{PlutoExpander}, node, page, doc)
     return
 end
 
-# The block body is TOML. Keys accepted (case-insensitive, snake-cased):
-#   notebook | url | state | binder | disable_ui
+# The block body is TOML. `notebook` is special; every other key must start
+# with `pluto_` and is forwarded as-is to `window.<key>` in the launch script.
 function _parse_pluto_block(code::AbstractString)
     raw = isempty(strip(code)) ? Dict{String,Any}() : TOML.parse(code)
-    # Normalise keys to lowercase so `Notebook=` and `notebook=` both work.
-    kv = Dict{String,Any}(lowercase(k) => v for (k, v) in raw)
 
-    notebook  = get(kv, "notebook", nothing)
-    url       = get(kv, "url", nothing)
-    state     = get(kv, "state", nothing)
-    binder    = get(kv, "binder", nothing)
-    disable_ui = get(kv, "disable_ui", true)
-
-    if notebook === nothing && url === nothing
-        error("`@pluto` block must set either `notebook = \"path/to/notebook.jl\"` or `url = \"…\"` + `state = \"…\"`.")
-    end
-    if notebook !== nothing && url !== nothing
-        error("`@pluto` block sets both `notebook` and `url`; use exactly one.")
-    end
-    if url !== nothing && state === nothing
-        error("`@pluto` block with `url` must also set `state = \"…plutostate\"`.")
+    notebook     = nothing
+    pluto_params = Dict{String,Any}()
+    for (k, v) in raw
+        if k == "notebook"
+            v isa AbstractString || error("`@pluto`: `notebook` must be a string.")
+            notebook = String(v)
+        elseif startswith(k, "pluto_")
+            pluto_params[k] = v
+        else
+            error("`@pluto`: unknown key `$k`. Use `notebook = \"…\"` or a key starting with `pluto_`.")
+        end
     end
 
-    PlutoBlock(;
-        notebook   = notebook isa AbstractString ? String(notebook) : nothing,
-        url        = url      isa AbstractString ? String(url)      : nothing,
-        state      = state    isa AbstractString ? String(state)    : nothing,
-        binder     = binder   isa AbstractString ? String(binder)   : nothing,
-        disable_ui = Bool(disable_ui),
-    )
+    # Default: hide Pluto's UI chrome in docs builds.
+    get!(pluto_params, "pluto_disable_ui", true)
+
+    has_urls = haskey(pluto_params, "pluto_notebookfile") && haskey(pluto_params, "pluto_statefile")
+    if notebook === nothing && !has_urls
+        error("`@pluto` block must set either `notebook = \"path/to/notebook.jl\"` or both `pluto_notebookfile` and `pluto_statefile`.")
+    end
+    if notebook !== nothing && (haskey(pluto_params, "pluto_notebookfile") || haskey(pluto_params, "pluto_statefile"))
+        error("`@pluto` block sets `notebook` together with `pluto_notebookfile`/`pluto_statefile`; use one or the other.")
+    end
+
+    return PlutoBlock(; notebook, pluto_params)
 end
 
 # Documenter's search-index and link-check phases flatten pages to plain text
