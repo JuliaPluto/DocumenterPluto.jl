@@ -96,7 +96,7 @@ Per-page scoping is a v0.2+ idea.
 
 `PlutoBlock` stores two "resolved" fields set during the builder step:
 
-- For `url=`/`state=` (hosted): resolved fields are the URLs verbatim.
+- For `pluto_notebookfile`/`pluto_statefile` (hosted): resolved fields are the URLs verbatim.
 - For `notebook=` (local): resolved fields are **build-root-relative paths**
   (e.g. `"pluto_notebooks/foo.jl"`), not absolute paths. Domify turns them
   into page-relative hrefs via `HTMLWriter.relhref(page_url, target)` where
