@@ -21,7 +21,7 @@ function run_notebook(path::AbstractString; out_state::AbstractString)
         # PlutoSliderServer strips `status_tree` — it's a transient UI hint the
         # frontend doesn't need to replay a completed run.
         delete!(state, "status_tree")
-        write(out_state, Pluto.pack(io, state))
+        write(out_state, Pluto.pack(state))
     finally
         Pluto.SessionActions.shutdown(session, notebook)
     end
