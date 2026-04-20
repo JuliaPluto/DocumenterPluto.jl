@@ -1,20 +1,24 @@
 # Render a PlutoBlock as the HTML a Pluto frontend needs to bring itself online:
-# the `launch-parameters` <script> that sets window.pluto_{notebookfile,state…},
-# followed by the <pluto-editor> placeholder that the JS in <head> hydrates.
+# the `launch-parameters` <script> that sets window.pluto_* globals, followed
+# by the <pluto-editor> placeholder that the JS in <head> hydrates.
 
 function Documenter.HTMLWriter.domify(dctx::DCtx, ::Node, block::PlutoBlock)
     page_url = Documenter.HTMLWriter.get_url(dctx.ctx, dctx.navnode.page)
-    nb_href    = _resolve_href(page_url, block.resolved_notebook)
-    state_href = _resolve_href(page_url, block.resolved_state)
 
-    launch_params = """
-    window.pluto_notebookfile = $(_js_string(nb_href));
-    window.pluto_disable_ui = $(_js_string(block.disable_ui));
-    window.pluto_binder_url = $(_js_string(block.binder));
-    window.pluto_statefile = $(_js_string(state_href));
-    window.pluto_recording_url = undefined;
-    window.pluto_recording_audio_url = undefined;
-    """
+    # Start from the user's pluto_* params, then overlay the locally-resolved
+    # notebook/state paths (if any) so they win over anything the user set.
+    params = copy(block.pluto_params)
+    if block.resolved_notebook !== nothing
+        params["pluto_notebookfile"] = Documenter.HTMLWriter.relhref(page_url, block.resolved_notebook)
+    end
+    if block.resolved_state !== nothing
+        params["pluto_statefile"] = Documenter.HTMLWriter.relhref(page_url, block.resolved_state)
+    end
+
+    launch_params = join(
+        ["window.$k = $(_js_string(params[k]));" for k in sort!(collect(keys(params)))],
+        "\n",
+    )
 
     editor = DOM.Tag(Symbol("pluto-editor"))[ :class => "loading" ](
         DOM.Tag(:progress)[
@@ -30,34 +34,18 @@ function Documenter.HTMLWriter.domify(dctx::DCtx, ::Node, block::PlutoBlock)
     ]
 end
 
-# target is either an external URL (http/https), or a build-root-relative path
-# like "pluto_notebooks/foo.jl". For the relative case, turn it into a
-# page-relative href via Documenter's own helper so that baseurl/prettyurl
-# deployments keep working.
-function _resolve_href(page_url::AbstractString, target::Union{String,Nothing})
-    target === nothing && return ""
-    _is_absolute_url(target) && return target
-    return Documenter.HTMLWriter.relhref(page_url, target)
-end
-
-_is_absolute_url(s::AbstractString) =
-    startswith(s, "http://") || startswith(s, "https://") || startswith(s, "//") || startswith(s, "/")
-
-# Minimal JS string literal: JSON encoding is a superset of JS-string syntax for
-# our purposes (URLs), and Julia's repr() for String happens to produce a valid JS string too. Use repr.
-
 struct JSLiteral
     x
 end
 
-
-_js_string(s::AbstractString) = repr(s)
-_js_string(s::Nothing) = "undefined"
-_js_string(s::Bool) = repr(s)
-_js_string(s::Number) = repr(s)
-_js_string(s::JSLiteral) = s.x
-
-
-
-
-
+# JS literal encoding for the scalar types TOML can produce, plus Nothing
+# (→ `undefined`) and JSLiteral (raw unquoted JS, e.g. `undefined`, function
+# literals) for user-provided pluto_* values that need to be something other
+# than a string/number/bool.
+_js_string(s::AbstractString) = repr(String(s))
+_js_string(s::Nothing)        = "undefined"
+_js_string(s::Bool)           = s ? "true" : "false"
+_js_string(s::Number)         = string(s)
+_js_string(s::AbstractVector) = "[" * join((_js_string(x) for x in s), ", ") * "]"
+_js_string(s::AbstractDict)   = "{" * join(("$(repr(String(k))): $(_js_string(v))" for (k,v) in s), ", ") * "}"
+_js_string(s::JSLiteral)      = s.x
