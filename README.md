@@ -35,8 +35,8 @@ Or with a hosted notebook:
 
 ````markdown
 ```@pluto
-url   = "https://bucket1.pluto.land/n/….jl"
-state = "https://bucket1.pluto.land/n/….plutostate"
+pluto_notebookfile = "https://bucket1.pluto.land/n/….jl"
+pluto_statefile    = "https://bucket1.pluto.land/n/….plutostate"
 ```
 ````
 
