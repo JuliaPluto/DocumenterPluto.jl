@@ -3,6 +3,10 @@
 Non-obvious context for working on this repo. Does not repeat what's in the
 source or README.
 
+This package has no users yet so breaking changes are fine.
+
+The user is a Pluto.jl expert developer, you can ask them to clarify any Pluto internals you need.
+
 ## What this package is
 
 A Documenter.jl plugin that embeds Pluto.jl notebooks into a documentation site
