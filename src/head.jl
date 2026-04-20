@@ -15,6 +15,8 @@ const _HEAD_STRIP_PATTERNS = [
 const _STYLE_OVERRIDES = """
 <style>
 .content :where(pluto-editor) {
+    position: relative;
+
     pre {
         border: none;
         background: none;
@@ -25,6 +27,15 @@ const _STYLE_OVERRIDES = """
     pre code:is(:first-of-type, :last-of-type) {
         padding: unset !important;
     }
+    
+    .edit_or_run {
+        z-index: unset;
+        position: absolute;
+    }
+}
+    
+#documenter .docs-sidebar:not(.asdf) {
+    z-index: 200;
 }
 </style>
 """
