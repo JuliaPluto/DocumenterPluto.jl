@@ -44,17 +44,20 @@ _is_absolute_url(s::AbstractString) =
     startswith(s, "http://") || startswith(s, "https://") || startswith(s, "//") || startswith(s, "/")
 
 # Minimal JS string literal: JSON encoding is a superset of JS-string syntax for
-# our purposes (URLs), and Julia's repr() for String happens to produce a valid
-# JS string too. Use repr.
+# our purposes (URLs), and Julia's repr() for String happens to produce a valid JS string too. Use repr.
+
+struct JSLiteral
+    x
+end
+
+
 _js_string(s::AbstractString) = repr(s)
 _js_string(s::Nothing) = "undefined"
 _js_string(s::Bool) = repr(s)
 _js_string(s::Number) = repr(s)
 _js_string(s::JSLiteral) = s.x
 
-struct JSLiteral
-    x
-end
+
 
 
 
