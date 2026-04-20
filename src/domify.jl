@@ -21,8 +21,7 @@ function Documenter.HTMLWriter.domify(dctx::DCtx, ::Node, block::PlutoBlock)
     # DOM.@tags doesn't allow `pluto-editor` as an identifier, so we use
     # `pluto_editor` and fix the tag name with a Tag() override. The frontend
     # matches on the hyphenated custom element name.
-    editor = DOM.Tag(Symbol("pluto-editor"))(
-        :class => "loading",
+    editor = DOM.Tag(Symbol("pluto-editor"))[ :class => "loading" ](
         progress[
             :style => "filter:grayscale()",
             :class => "delete-me-when-live statefile-fetch-progress",
@@ -31,7 +30,7 @@ function Documenter.HTMLWriter.domify(dctx::DCtx, ::Node, block::PlutoBlock)
     )
 
     return [
-        script[:data-pluto-file => "launch-parameters"](launch_params),
+        script[Symbol("data-pluto-file") => "launch-parameters"](launch_params),
         div[:style => "display:flex; overflow-y: hidden;"](editor),
     ]
 end
