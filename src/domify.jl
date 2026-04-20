@@ -48,7 +48,7 @@ _is_absolute_url(s::AbstractString) =
 # JS string too. Use repr.
 _js_string(s::AbstractString) = repr(s)
 _js_string(s::Nothing) = "undefined"
-_js_string(s::Boolean) = repr(s)
+_js_string(s::Bool) = repr(s)
 _js_string(s::Number) = repr(s)
 _js_string(s::JSLiteral) = s.x
 
