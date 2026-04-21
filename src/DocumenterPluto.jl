@@ -4,7 +4,7 @@
 A Documenter.jl plugin that embeds Pluto.jl notebooks directly into an HTML
 documentation build — no iframes.
 
-Loading the package is enough: any page containing a ```` ```@pluto ```` block
+Loading the package is enough: any page containing a ````` ```@pluto ````` block
 will be rendered as a live, interactive Pluto editor, and the necessary frontend
 assets are injected into the site's `<head>`.
 

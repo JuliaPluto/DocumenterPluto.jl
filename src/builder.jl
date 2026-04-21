@@ -76,8 +76,11 @@ function _materialise_notebooks!(doc, blocks)
         # Cache: skip re-running if the copied .jl is newer than the source.
         if !(isfile(nb_out) && isfile(state_out) && mtime(nb_out) >= mtime(nb_src))
             @info "DocumenterPluto: running notebook" notebook=nb_rel
+            # Run the source file directly so `@__DIR__` and sibling-file loads
+            # resolve against the user's notebook directory, not the build copy.
+            # Safe because run_notebook sets disable_writing_notebook_files=true.
+            run_notebook(nb_src; out_state=state_out)
             cp(nb_src, nb_out; force=true)
-            run_notebook(nb_out; out_state=state_out)
         end
 
         block.resolved_notebook = _site_root_relative(nb_out, build_root)
