@@ -1,7 +1,7 @@
 name = "DocumenterPluto"
 uuid = "82903e1d-671c-4b50-8abc-45da0249d4e5"
-authors = ["Fons van der Plas <fons@plutojl.org> and contributors"]
 version = "0.1.0"
+authors = ["Fons van der Plas <fons@plutojl.org> and contributors"]
 
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -9,10 +9,15 @@ MarkdownAST = "d0879d2d-cac2-40c8-9cee-1863dc0c7391"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
+[sources.Documenter]
+rev = "assets-HTML-type"
+url = "https://github.com/fonsp/Documenter.jl"
+
 [compat]
 Documenter = "1.9"
 MarkdownAST = "0.1"
 Pluto = "0.20"
+TOML = "1"
 julia = "1.10"
 
 [extras]
@@ -20,6 +25,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
-
-[sources]
-Documenter = {url = "https://github.com/fonsp/Documenter.jl", rev = "assets-HTML-type"}
