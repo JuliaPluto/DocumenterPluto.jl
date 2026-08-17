@@ -10,7 +10,7 @@ build — no iframes, live and interactive.
 ## Requirements
 
 - Julia 1.10+
-- Documenter 1.9+ (for `RawHTMLHeadContent`)
+- Documenter 1.9+ (for `RawHTMLHeadContent`), waiting for https://github.com/JuliaDocs/Documenter.jl/issues/2933
 - Pluto 0.20+
 
 ## Usage
