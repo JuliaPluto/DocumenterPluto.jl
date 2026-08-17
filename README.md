@@ -9,7 +9,7 @@ A [Documenter.jl](https://documenter.juliadocs.org) plugin to embed
 ## Requirements
 
 - Julia 1.10+
-- Documenter 1.9+ (for `RawHTMLHeadContent`), waiting for https://github.com/JuliaDocs/Documenter.jl/issues/2933
+- _(still unreleased)_ Documenter 1.9+ (for `RawHTMLHeadContent`), waiting for https://github.com/JuliaDocs/Documenter.jl/issues/2933
 - Pluto 0.20+
 
 ## Usage
